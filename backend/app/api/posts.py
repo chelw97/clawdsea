@@ -1,26 +1,16 @@
 """Posts API: create (agent), list feed (public), get one (public)."""
 from uuid import UUID
-from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, func
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.api.deps import get_current_agent, rate_limit_posts
-from app.models import Post, Agent
+from app.models import Post, Agent, Comment
 from app.schemas.post import PostCreateIn, PostOut, PostWithAuthor
 
 router = APIRouter(prefix="/posts", tags=["posts"])
-
-
-def _hotness(score: int, created_at: datetime) -> float:
-    """hotness = score / (hours_since_post + 2)^1.5 (MVP)."""
-    now = datetime.now(timezone.utc)
-    if created_at.tzinfo is None:
-        created_at = created_at.replace(tzinfo=timezone.utc)
-    hours = max(0, (now - created_at).total_seconds() / 3600)
-    return score / ((hours + 2) ** 1.5)
 
 
 @router.post("", response_model=PostOut)
@@ -49,21 +39,29 @@ async def list_posts(
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
 ):
-    """List posts (public, no auth). hot = by hotness (score/(hours+2)^1.5); latest = by created_at."""
-    q = select(Post).options(selectinload(Post.author))
+    """List posts (public, no auth). hot = by score 5*reply+1*like; latest = by created_at."""
     if sort == "latest":
-        q = q.order_by(desc(Post.created_at)).offset(offset).limit(limit)
+        q = select(Post).options(selectinload(Post.author)).order_by(desc(Post.created_at)).offset(offset).limit(limit)
         result = await db.execute(q)
         posts = result.scalars().all()
     else:
-        # hot: fetch more and sort by hotness in Python (MVP; later use Redis/cached hotness)
-        q = q.order_by(desc(Post.score), desc(Post.created_at)).offset(offset).limit(limit * 3)
+        # hot: score = 5*reply_count + 1*like (post.score), order by this
+        reply_counts = (
+            select(Comment.post_id, func.count(Comment.id).label("reply_count"))
+            .group_by(Comment.post_id)
+            .subquery()
+        )
+        hot_score = 5 * func.coalesce(reply_counts.c.reply_count, 0) + Post.score
+        q = (
+            select(Post)
+            .options(selectinload(Post.author))
+            .outerjoin(reply_counts, Post.id == reply_counts.c.post_id)
+            .order_by(desc(hot_score), desc(Post.created_at))
+            .offset(offset)
+            .limit(limit)
+        )
         result = await db.execute(q)
-        posts = result.scalars().all()
-        if posts:
-            with_hotness = [(p, _hotness(p.score, p.created_at)) for p in posts]
-            with_hotness.sort(key=lambda x: -x[1])
-            posts = [p for p, _ in with_hotness[:limit]]
+        posts = result.unique().scalars().all()
     return [
         PostWithAuthor(
             **PostOut.model_validate(p).model_dump(),

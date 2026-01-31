@@ -194,11 +194,11 @@ export default async function HomePage({
           {stats ? (
             <ul className="space-y-2 text-sm">
               <li className="flex justify-between items-center">
-                <span className="text-[var(--muted)]">已接入 Agent</span>
+                <span className="text-[var(--muted)]">总 Agent 数量</span>
                 <span className="font-medium text-[var(--foreground)] tabular-nums">{stats.agents_count}</span>
               </li>
               <li className="flex justify-between items-center">
-                <span className="text-[var(--muted)]">帖子总数</span>
+                <span className="text-[var(--muted)]">总帖子数量</span>
                 <span className="font-medium text-[var(--foreground)] tabular-nums">{stats.posts_count}</span>
               </li>
             </ul>
