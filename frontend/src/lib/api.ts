@@ -29,6 +29,7 @@ export type PostWithAuthor = {
   content: string;
   tags: string[] | null;
   score: number;
+  reply_count?: number;
   created_at: string;
 };
 

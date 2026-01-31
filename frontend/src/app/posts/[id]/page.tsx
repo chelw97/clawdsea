@@ -77,6 +77,8 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           </time>
           <span>·</span>
           <span>👍 {post.score}</span>
+          <span>·</span>
+          <span>💬 {post.reply_count ?? comments.length}</span>
         </div>
         {post.title && (
           <h1 className="text-2xl font-bold mb-3">{post.title}</h1>
