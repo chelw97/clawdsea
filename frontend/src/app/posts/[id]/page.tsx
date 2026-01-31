@@ -1,10 +1,49 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { fetchPost, fetchComments } from "@/lib/api";
+import { fetchPost, fetchComments, buildCommentTree } from "@/lib/api";
+import type { CommentWithAuthor } from "@/lib/api";
 import { ContentMarkdown } from "@/components/ContentMarkdown";
 import { AgentAvatar } from "@/components/AgentAvatar";
 
 export const revalidate = 30;
+
+function CommentBlock({ comment, depth = 0 }: { comment: CommentWithAuthor; depth?: number }) {
+  const isNested = depth > 0;
+  return (
+    <div
+      className={isNested ? "ml-4 mt-2 pl-4 border-l-2 border-[var(--border)]" : ""}
+      data-depth={depth}
+    >
+      <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-3 pl-6">
+        <div className="flex items-center gap-2 text-sm text-[var(--muted)] mb-1">
+          <Link
+            href={`/agents/${comment.author_agent_id}`}
+            className="flex items-center gap-2 text-[var(--accent)] hover:underline"
+          >
+            <AgentAvatar agentId={comment.author_agent_id} size={24} className="ring-1 ring-[var(--border)]" />
+            {comment.author_name}
+          </Link>
+          <span>·</span>
+          <time dateTime={comment.created_at}>
+            {new Date(comment.created_at).toLocaleString("en-US")}
+          </time>
+          <span>·</span>
+          <span>👍 {comment.score}</span>
+        </div>
+        <div className="text-sm prose dark:prose-invert prose-p:my-1 max-w-none">
+          <ContentMarkdown content={comment.content ?? ""} />
+        </div>
+      </div>
+      {comment.replies.length > 0 && (
+        <div className="space-y-2 mt-2">
+          {comment.replies.map((reply) => (
+            <CommentBlock key={reply.id} comment={reply} depth={depth + 1} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -19,8 +58,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
   if (!post) notFound();
 
-  // Build reply tree (flat list for MVP; optional: nest by parent_comment_id)
-  const commentList = comments;
+  const commentTree = buildCommentTree(comments);
 
   return (
     <div>
@@ -60,35 +98,13 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
         )}
       </article>
 
-      <h2 className="text-lg font-semibold mb-3">Comments (read-only, no replies)</h2>
+      <h2 className="text-lg font-semibold mb-3">Comments</h2>
       <div className="space-y-3">
-        {commentList.map((c) => (
-          <div
-            key={c.id}
-            className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-3 pl-6"
-          >
-            <div className="flex items-center gap-2 text-sm text-[var(--muted)] mb-1">
-              <Link
-                href={`/agents/${c.author_agent_id}`}
-                className="flex items-center gap-2 text-[var(--accent)] hover:underline"
-              >
-                <AgentAvatar agentId={c.author_agent_id} size={24} className="ring-1 ring-[var(--border)]" />
-                {c.author_name}
-              </Link>
-              <span>·</span>
-              <time dateTime={c.created_at}>
-                {new Date(c.created_at).toLocaleString("en-US")}
-              </time>
-              <span>·</span>
-              <span>👍 {c.score}</span>
-            </div>
-            <div className="text-sm prose dark:prose-invert prose-p:my-1 max-w-none">
-              <ContentMarkdown content={c.content ?? ""} />
-            </div>
-          </div>
+        {commentTree.map((c) => (
+          <CommentBlock key={c.id} comment={c} />
         ))}
       </div>
-      {commentList.length === 0 && (
+      {commentTree.length === 0 && (
         <p className="text-[var(--muted)]">No comments yet.</p>
       )}
     </div>
