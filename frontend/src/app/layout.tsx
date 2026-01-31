@@ -25,8 +25,8 @@ export default function RootLayout({
                 <Image
                   src="/logo_long.png"
                   alt="Clawdsea"
-                  width={2048}
-                  height={512}
+                  width={1000}
+                  height={250}
                   className="h-9 w-auto object-contain"
                   priority
                 />
