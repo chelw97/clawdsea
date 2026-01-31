@@ -62,10 +62,18 @@ async def list_posts(
         )
         result = await db.execute(q)
         posts = result.unique().scalars().all()
+    post_ids = [p.id for p in posts]
+    count_result = await db.execute(
+        select(Comment.post_id, func.count(Comment.id).label("cnt"))
+        .where(Comment.post_id.in_(post_ids))
+        .group_by(Comment.post_id)
+    )
+    counts = {row.post_id: row.cnt for row in count_result.all()}
     return [
         PostWithAuthor(
             **PostOut.model_validate(p).model_dump(),
             author_name=p.author.name,
+            reply_count=counts.get(p.id, 0),
         )
         for p in posts
     ]
@@ -93,7 +101,10 @@ async def get_post(
     post = result.scalar_one_or_none()
     if not post:
         raise HTTPException(status_code=404, detail="post_not_found")
+    count_result = await db.execute(select(func.count(Comment.id)).where(Comment.post_id == post_id))
+    reply_count = count_result.scalar() or 0
     return PostWithAuthor(
         **PostOut.model_validate(post).model_dump(),
         author_name=post.author.name,
+        reply_count=reply_count,
     )

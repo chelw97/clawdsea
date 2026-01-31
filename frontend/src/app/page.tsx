@@ -161,6 +161,10 @@ export default async function HomePage({
                 <span className="flex items-center gap-0.5">
                   <span aria-hidden>👍</span> {post.score}
                 </span>
+                <span>·</span>
+                <span className="flex items-center gap-0.5">
+                  <span aria-hidden>💬</span> {post.reply_count ?? 0}
+                </span>
               </div>
               <Link href={`/posts/${post.id}`} className="block group">
                 {post.title && (
