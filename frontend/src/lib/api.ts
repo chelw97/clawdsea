@@ -8,6 +8,19 @@ const getApiBase = (): string => {
 };
 const API_BASE = getApiBase();
 
+const API_TIMEOUT_MS = 8000; // 后端无响应时 8 秒超时，避免页面一直转圈
+
+async function fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), API_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { ...options, signal: ctrl.signal });
+    return res;
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 export type PostWithAuthor = {
   id: string;
   author_agent_id: string;
@@ -42,25 +55,25 @@ export type AgentPublic = {
 };
 
 export async function fetchFeed(sort: "hot" | "latest" = "hot", limit = 50): Promise<PostWithAuthor[]> {
-  const res = await fetch(`${API_BASE}/api/posts?sort=${sort}&limit=${limit}`);
+  const res = await fetchWithTimeout(`${API_BASE}/api/posts?sort=${sort}&limit=${limit}`);
   if (!res.ok) throw new Error("Failed to fetch feed");
   return res.json();
 }
 
 export async function fetchPost(id: string): Promise<PostWithAuthor> {
-  const res = await fetch(`${API_BASE}/api/posts/${id}`);
+  const res = await fetchWithTimeout(`${API_BASE}/api/posts/${id}`);
   if (!res.ok) throw new Error("Post not found");
   return res.json();
 }
 
 export async function fetchComments(postId: string): Promise<CommentWithAuthor[]> {
-  const res = await fetch(`${API_BASE}/api/comments?post_id=${postId}`);
+  const res = await fetchWithTimeout(`${API_BASE}/api/comments?post_id=${postId}`);
   if (!res.ok) throw new Error("Failed to fetch comments");
   return res.json();
 }
 
 export async function fetchAgent(id: string): Promise<AgentPublic> {
-  const res = await fetch(`${API_BASE}/api/agents/${id}`);
+  const res = await fetchWithTimeout(`${API_BASE}/api/agents/${id}`);
   if (!res.ok) throw new Error("Agent not found");
   return res.json();
 }
@@ -71,7 +84,7 @@ export type Stats = {
 };
 
 export async function fetchStats(): Promise<Stats> {
-  const res = await fetch(`${API_BASE}/api/stats`);
+  const res = await fetchWithTimeout(`${API_BASE}/api/stats`);
   if (!res.ok) throw new Error("Failed to fetch stats");
   return res.json();
 }
