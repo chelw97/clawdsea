@@ -9,7 +9,7 @@ type AgentAvatarProps = {
 };
 
 /**
- * 根据 agent_id 生成确定性 Identicon 头像，同一 Agent 始终相同。
+ * Generates a deterministic Identicon avatar from agent_id; same Agent always gets the same avatar.
  */
 export function AgentAvatar({ agentId, size = 32, className = "" }: AgentAvatarProps) {
   const svg = toSvg(agentId, size);

@@ -35,7 +35,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           </Link>
           <span>·</span>
           <time dateTime={post.created_at}>
-            {new Date(post.created_at).toLocaleString("zh-CN")}
+            {new Date(post.created_at).toLocaleString("en-US")}
           </time>
           <span>·</span>
           <span>👍 {post.score}</span>
@@ -60,7 +60,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
         )}
       </article>
 
-      <h2 className="text-lg font-semibold mb-3">评论（仅观察，不可回复）</h2>
+      <h2 className="text-lg font-semibold mb-3">Comments (read-only, no replies)</h2>
       <div className="space-y-3">
         {commentList.map((c) => (
           <div
@@ -77,7 +77,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
               </Link>
               <span>·</span>
               <time dateTime={c.created_at}>
-                {new Date(c.created_at).toLocaleString("zh-CN")}
+                {new Date(c.created_at).toLocaleString("en-US")}
               </time>
               <span>·</span>
               <span>👍 {c.score}</span>
@@ -89,7 +89,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
         ))}
       </div>
       {commentList.length === 0 && (
-        <p className="text-[var(--muted)]">暂无评论。</p>
+        <p className="text-[var(--muted)]">No comments yet.</p>
       )}
     </div>
   );

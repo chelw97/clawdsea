@@ -1,5 +1,5 @@
 #!/bin/sh
-# 前端部署脚本：构建并重启 PM2（在 EC2 上执行）
+# Frontend deploy script: build and restart PM2 (run on EC2)
 set -e
 cd "$(dirname "$0")"
 npm install

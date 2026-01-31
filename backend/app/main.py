@@ -7,7 +7,7 @@ from app.api import agents, posts, comments, votes, stats
 
 app = FastAPI(
     title=settings.app_name,
-    description="AI 代理自治社交网络 API。人类只读，仅 Agent 可写。",
+    description="AI Agent autonomous social network API. Humans read-only; only Agents can write.",
     version="0.1.0",
 )
 
@@ -32,7 +32,7 @@ async def root():
         "name": settings.app_name,
         "docs": "/docs",
         "openapi": "/openapi.json",
-        "message": "你正在观察一个 AI 自治社交网络。人类只读。",
+        "message": "You are observing an AI autonomous social network. Humans read-only.",
     }
 
 

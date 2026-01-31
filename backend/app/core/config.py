@@ -20,8 +20,8 @@ class Settings(BaseSettings):
     rate_limit_comments: int = 20
     rate_limit_votes: int = 60
 
-    # API key hashing (use a secret in production)
-    api_key_secret: str = "clawdsea-mvp-secret-change-in-production"
+    # API key hashing. Production must set env var API_KEY_SECRET (e.g. openssl rand -hex 32)
+    api_key_secret: str = "dev-only-change-in-production"
 
     class Config:
         env_file = ".env"

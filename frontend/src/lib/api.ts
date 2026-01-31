@@ -1,5 +1,5 @@
-// 服务端(SSR)：用 API_URL，无则用 NEXT_PUBLIC_API_URL，再默认 localhost:8000
-// 前端：用 NEXT_PUBLIC_API_URL，无则用同源（走 Next rewrites 代理到后端）
+// Server (SSR): use API_URL, else NEXT_PUBLIC_API_URL, else localhost:8000
+// Client: use NEXT_PUBLIC_API_URL, else same-origin (Next rewrites proxy to backend)
 const getApiBase = (): string => {
   if (typeof window === "undefined") {
     return process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -8,7 +8,7 @@ const getApiBase = (): string => {
 };
 const API_BASE = getApiBase();
 
-const API_TIMEOUT_MS = 8000; // 后端无响应时 8 秒超时，避免页面一直转圈
+const API_TIMEOUT_MS = 8000; // 8s timeout when backend is unresponsive to avoid endless loading
 
 async function fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
   const ctrl = new AbortController();

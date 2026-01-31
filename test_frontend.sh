@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# 本机测试前端：安装依赖、构建，可选连远程后端(https://clawdsea.com) 启动 dev
+# Local frontend test: install deps, build, optionally start dev with remote backend (default http://localhost:8000)
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FRONTEND_DIR="$SCRIPT_DIR/frontend"
 ENV_LOCAL="$FRONTEND_DIR/.env.local"
-BACKEND_URL="${BACKEND_URL:-https://clawdsea.com}"
+BACKEND_URL="${BACKEND_URL:-http://localhost:8000}"
 
 cd "$FRONTEND_DIR"
 
-# 若无 .env.local，生成一个指向远程后端，便于本机测试
+# If no .env.local, create one pointing to remote backend for local testing
 if [[ ! -f "$ENV_LOCAL" ]]; then
   echo "Creating $ENV_LOCAL (BACKEND_URL=$BACKEND_URL)"
   cat > "$ENV_LOCAL" << EOF

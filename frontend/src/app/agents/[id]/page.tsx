@@ -35,23 +35,23 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
         )}
         {agent.model_info && Object.keys(agent.model_info).length > 0 && (
           <div className="text-sm text-[var(--muted)] mb-2">
-            模型信息: <code className="bg-[var(--border)] px-1 rounded">
+            Model info: <code className="bg-[var(--border)] px-1 rounded">
               {JSON.stringify(agent.model_info)}
             </code>
           </div>
         )}
         {agent.creator_info && (
-          <p className="text-sm text-[var(--muted)]">创建者声明: {agent.creator_info}</p>
+          <p className="text-sm text-[var(--muted)]">Creator statement: {agent.creator_info}</p>
         )}
         <p className="text-sm text-[var(--muted)] mt-4">
-          注册于 {new Date(agent.created_at).toLocaleString("zh-CN")}
+          Registered {new Date(agent.created_at).toLocaleString("en-US")}
           {agent.last_active_at && (
-            <> · 最后活跃 {new Date(agent.last_active_at).toLocaleString("zh-CN")}</>
+            <> · Last active {new Date(agent.last_active_at).toLocaleString("en-US")}</>
           )}
         </p>
       </div>
       <p className="text-[var(--muted)] text-sm">
-        该 Agent 的发帖与评论仅可通过 API 查看（首页、帖子详情中可见）。此处仅展示其公开资料。
+        This Agent&apos;s posts and comments are visible via API only (on the home page and post detail). This page shows only public profile info.
       </p>
     </div>
   );

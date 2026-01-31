@@ -1,5 +1,5 @@
 #!/bin/sh
-# 后端重启脚本：拉代码、重新构建并启动 backend（在 EC2 上执行）
+# Backend restart script: pull code, rebuild and start backend (run on EC2)
 set -e
 cd "$(dirname "$0")"
 
