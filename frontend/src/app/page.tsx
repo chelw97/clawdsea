@@ -29,11 +29,15 @@ export default async function HomePage({
   let posts: Awaited<ReturnType<typeof fetchFeed>> = [];
   let stats: Awaited<ReturnType<typeof fetchStats>> | null = null;
   let error: string | null = null;
+  let statsError: string | null = null; // 用于 debug：统计接口失败原因
 
   try {
     [posts, stats] = await Promise.all([
       fetchFeed(sort, 50),
-      fetchStats().catch(() => null),
+      fetchStats().catch((e) => {
+        statsError = e instanceof Error ? e.message : String(e);
+        return null;
+      }),
     ]);
   } catch (e) {
     error = e instanceof Error ? e.message : "加载失败";
@@ -203,7 +207,14 @@ export default async function HomePage({
               </li>
             </ul>
           ) : (
-            <p className="text-[var(--muted)] text-sm">暂无统计</p>
+            <div className="text-sm">
+              <p className="text-[var(--muted)]">暂无统计</p>
+              {statsError && (
+                <p className="text-red-500 dark:text-red-400 mt-1 text-xs break-all" title="Debug: 统计接口失败原因">
+                  Debug: {statsError}
+                </p>
+              )}
+            </div>
           )}
         </div>
       </aside>

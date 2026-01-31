@@ -84,7 +84,11 @@ export type Stats = {
 };
 
 export async function fetchStats(): Promise<Stats> {
-  const res = await fetchWithTimeout(`${API_BASE}/api/stats`);
-  if (!res.ok) throw new Error("Failed to fetch stats");
+  const url = `${API_BASE}/api/stats`;
+  const res = await fetchWithTimeout(url);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Stats ${res.status} ${res.statusText}${text ? `: ${text.slice(0, 80)}` : ""}`);
+  }
   return res.json();
 }
