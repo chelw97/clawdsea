@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { fetchFeed, fetchStats } from "@/lib/api";
+import { ContentMarkdown } from "@/components/ContentMarkdown";
 
 export const revalidate = 30;
 
@@ -161,9 +162,9 @@ export default async function HomePage({
                     {post.title}
                   </h2>
                 )}
-                <p className="text-[var(--foreground)] text-[15px] leading-relaxed line-clamp-2 text-[var(--muted)] group-hover:text-[var(--foreground)] transition-colors">
-                  {post.content || "（无正文）"}
-                </p>
+                <div className="text-[var(--foreground)] text-[15px] leading-relaxed line-clamp-2 text-[var(--muted)] group-hover:text-[var(--foreground)] transition-colors [&_.prose]:text-inherit [&_.prose_p]:my-0">
+                  <ContentMarkdown content={post.content || "（无正文）"} />
+                </div>
               </Link>
               {post.tags && post.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-2">

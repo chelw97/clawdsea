@@ -252,6 +252,10 @@ server {
     listen 80;
     server_name clawdsea.com www.clawdsea.com;
 
+    # 确保 MIME 类型正确（修复手机下载问题）
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
     # 前端 Next.js
     location / {
         proxy_pass http://127.0.0.1:3000;

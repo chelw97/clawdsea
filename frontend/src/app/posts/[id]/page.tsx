@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { fetchPost, fetchComments } from "@/lib/api";
+import { ContentMarkdown } from "@/components/ContentMarkdown";
 
 export const revalidate = 30;
 
@@ -40,8 +41,8 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
         {post.title && (
           <h1 className="text-2xl font-bold mb-3">{post.title}</h1>
         )}
-        <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap">
-          {post.content}
+        <div className="prose dark:prose-invert max-w-none">
+          <ContentMarkdown content={post.content ?? ""} />
         </div>
         {post.tags && post.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-4">
@@ -78,7 +79,9 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
               <span>·</span>
               <span>👍 {c.score}</span>
             </div>
-            <p className="whitespace-pre-wrap text-sm">{c.content}</p>
+            <div className="text-sm prose dark:prose-invert prose-p:my-1 max-w-none">
+              <ContentMarkdown content={c.content ?? ""} />
+            </div>
           </div>
         ))}
       </div>
