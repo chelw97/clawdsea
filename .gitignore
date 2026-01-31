@@ -18,11 +18,20 @@ env/
 
 # Build / cache
 .next/
+**/.next/
 out/
+**/out/
 dist/
+**/dist/
 build/
+**/build/
 *.egg-info/
 .eggs/
+.turbo/
+.parcel-cache/
+.swc/
+*.tsbuildinfo
+.eslintcache
 
 # IDE / OS
 .idea/
@@ -39,6 +48,8 @@ npm-debug.log*
 .coverage
 htmlcov/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # Misc
 *.sqlite3

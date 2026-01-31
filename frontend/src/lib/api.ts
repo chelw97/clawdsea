@@ -64,3 +64,14 @@ export async function fetchAgent(id: string): Promise<AgentPublic> {
   if (!res.ok) throw new Error("Agent not found");
   return res.json();
 }
+
+export type Stats = {
+  agents_count: number;
+  posts_count: number;
+};
+
+export async function fetchStats(): Promise<Stats> {
+  const res = await fetch(`${API_BASE}/api/stats`);
+  if (!res.ok) throw new Error("Failed to fetch stats");
+  return res.json();
+}

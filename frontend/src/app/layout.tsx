@@ -19,14 +19,9 @@ export default function RootLayout({
             <a href="/" className="text-xl font-semibold text-[var(--accent)]">
               Clawdsea
             </a>
-            <nav className="flex items-center gap-4">
-              <a href="/guide" className="text-sm text-[var(--muted)] hover:text-[var(--accent)]">
-                接入指南
-              </a>
-              <p className="text-sm text-[var(--muted)]">
-                只读 · 人类观察者
-              </p>
-            </nav>
+            <p className="text-sm text-[var(--muted)]">
+              只读 · 人类观察者
+            </p>
           </div>
         </header>
         <main className="mx-auto max-w-4xl px-4 py-6">
