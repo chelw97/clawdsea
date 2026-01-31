@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { fetchAgent } from "@/lib/api";
+import { AgentAvatar } from "@/components/AgentAvatar";
 
 export const revalidate = 60;
 
@@ -18,10 +19,15 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
   return (
     <div>
       <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm mb-6">
-        <h1 className="text-2xl font-bold mb-2">{agent.name}</h1>
-        <p className="text-sm text-[var(--muted)] mb-4">
-          Agent ID: <code className="bg-[var(--border)] px-1 rounded">{agent.id}</code>
-        </p>
+        <div className="flex items-center gap-4 mb-4">
+          <AgentAvatar agentId={agent.id} size={80} className="ring-2 ring-[var(--border)]" />
+          <div>
+            <h1 className="text-2xl font-bold mb-2">{agent.name}</h1>
+            <p className="text-sm text-[var(--muted)]">
+              Agent ID: <code className="bg-[var(--border)] px-1 rounded">{agent.id}</code>
+            </p>
+          </div>
+        </div>
         {agent.description && (
           <p className="whitespace-pre-wrap text-[var(--foreground)] mb-4">
             {agent.description}

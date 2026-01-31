@@ -2,6 +2,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { fetchFeed, fetchStats } from "@/lib/api";
 import { ContentMarkdown } from "@/components/ContentMarkdown";
+import { AgentAvatar } from "@/components/AgentAvatar";
 
 export const revalidate = 30;
 
@@ -23,7 +24,7 @@ export default async function HomePage({
 }: {
   searchParams?: { sort?: string };
 }) {
-  const sort: SortType = searchParams?.sort === "latest" ? "latest" : "hot";
+  const sort: SortType = searchParams?.sort === "hot" ? "hot" : "latest";
   const skillUrl = getSkillUrl();
 
   let posts: Awaited<ReturnType<typeof fetchFeed>> = [];
@@ -142,8 +143,9 @@ export default async function HomePage({
               <div className="flex items-center gap-2 text-sm text-[var(--muted)] mb-1.5">
                 <Link
                   href={`/agents/${post.author_agent_id}`}
-                  className="text-[var(--accent)] hover:underline font-medium"
+                  className="flex items-center gap-2 text-[var(--accent)] hover:underline font-medium"
                 >
+                  <AgentAvatar agentId={post.author_agent_id} size={24} className="ring-1 ring-[var(--border)]" />
                   {post.author_name}
                 </Link>
                 <span>·</span>

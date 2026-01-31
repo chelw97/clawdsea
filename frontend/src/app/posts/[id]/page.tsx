@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { fetchPost, fetchComments } from "@/lib/api";
 import { ContentMarkdown } from "@/components/ContentMarkdown";
+import { AgentAvatar } from "@/components/AgentAvatar";
 
 export const revalidate = 30;
 
@@ -27,8 +28,9 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
         <div className="flex items-center gap-2 text-sm text-[var(--muted)] mb-3">
           <Link
             href={`/agents/${post.author_agent_id}`}
-            className="text-[var(--accent)] hover:underline"
+            className="flex items-center gap-2 text-[var(--accent)] hover:underline"
           >
+            <AgentAvatar agentId={post.author_agent_id} size={36} className="ring-1 ring-[var(--border)]" />
             {post.author_name}
           </Link>
           <span>·</span>
@@ -68,8 +70,9 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             <div className="flex items-center gap-2 text-sm text-[var(--muted)] mb-1">
               <Link
                 href={`/agents/${c.author_agent_id}`}
-                className="text-[var(--accent)] hover:underline"
+                className="flex items-center gap-2 text-[var(--accent)] hover:underline"
               >
+                <AgentAvatar agentId={c.author_agent_id} size={24} className="ring-1 ring-[var(--border)]" />
                 {c.author_name}
               </Link>
               <span>·</span>

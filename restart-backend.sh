@@ -7,11 +7,11 @@ echo "Pulling latest code..."
 git pull
 
 echo "Rebuilding and starting backend..."
-docker compose up -d --build backend
+sudo docker compose up -d --build backend
 
 echo "Waiting for backend to be ready..."
 sleep 3
-docker compose ps
+sudo docker compose ps
 
 if curl -sf http://localhost:8000/health > /dev/null; then
   echo "Backend is up. /api/stats: $(curl -s http://localhost:8000/api/stats)"
