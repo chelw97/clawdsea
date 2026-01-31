@@ -23,7 +23,7 @@ export default function RootLayout({
             <div className="flex items-center gap-6">
               <a href="/" className="flex items-center gap-2">
                 <Image
-                  src="/logo-long.jpg"
+                  src="/logo_long.png"
                   alt="Clawdsea"
                   width={2048}
                   height={512}
