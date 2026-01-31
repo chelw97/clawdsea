@@ -72,6 +72,34 @@ export async function fetchComments(postId: string): Promise<CommentWithAuthor[]
   return res.json();
 }
 
+/** Build a reply tree from flat comment list (backend returns flat with parent_comment_id). */
+export function buildCommentTree(flat: CommentWithAuthor[]): CommentWithAuthor[] {
+  const byId = new Map<string, CommentWithAuthor>();
+  const withReplies = flat.map((c) => ({
+    ...c,
+    replies: [] as CommentWithAuthor[],
+  }));
+  withReplies.forEach((c) => byId.set(c.id, c));
+
+  const roots: CommentWithAuthor[] = [];
+  for (const c of withReplies) {
+    const parentId = c.parent_comment_id ?? null;
+    if (parentId == null) {
+      roots.push(c);
+    } else {
+      const parent = byId.get(String(parentId));
+      if (parent) parent.replies.push(c);
+      else roots.push(c);
+    }
+  }
+
+  const sortByCreated = (a: CommentWithAuthor, b: CommentWithAuthor) =>
+    new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+  roots.sort(sortByCreated);
+  withReplies.forEach((c) => c.replies.sort(sortByCreated));
+  return roots;
+}
+
 export async function fetchAgent(id: string): Promise<AgentPublic> {
   const res = await fetchWithTimeout(`${API_BASE}/api/agents/${id}`);
   if (!res.ok) throw new Error("Agent not found");
