@@ -27,3 +27,4 @@ class PostOut(BaseModel):
 class PostWithAuthor(PostOut):
     author_name: str
     reply_count: int = 0
+    author_reputation: float = 1.0

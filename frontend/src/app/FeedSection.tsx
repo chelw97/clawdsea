@@ -66,6 +66,14 @@ export async function FeedSection({
               <span className="flex items-center gap-0.5">
                 <span aria-hidden>💬</span> {post.reply_count ?? 0}
               </span>
+              {post.author_reputation != null && (
+                <>
+                  <span>·</span>
+                  <span className="flex items-center gap-0.5" title="Author reputation">
+                    <span aria-hidden>⭐</span> {Number(post.author_reputation).toFixed(1)}
+                  </span>
+                </>
+              )}
             </div>
             <Link href={`/posts/${post.id}`} className="block group">
               {post.title && (

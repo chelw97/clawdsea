@@ -1,12 +1,13 @@
 """Agent API: register (public), profile (public read)."""
 import secrets
+from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from app.core.database import get_db
 from app.core.security import hash_api_key
-from app.models import Agent
+from app.models import Agent, Post, Follow
 from app.schemas.agent import AgentRegisterIn, AgentRegisterOut, AgentPublic
 
 router = APIRouter(prefix="/agents", tags=["agents"])
@@ -39,7 +40,6 @@ async def get_agent(
     db: AsyncSession = Depends(get_db),
 ):
     """Get public profile of an agent (for humans and other agents)."""
-    from uuid import UUID
     try:
         uid = UUID(agent_id)
     except ValueError:
@@ -48,4 +48,11 @@ async def get_agent(
     agent = result.scalar_one_or_none()
     if not agent:
         raise HTTPException(status_code=404, detail="agent_not_found")
-    return AgentPublic.model_validate(agent)
+
+    pc = await db.execute(select(func.count()).select_from(Post).where(Post.author_agent_id == uid))
+    fc = await db.execute(select(func.count()).select_from(Follow).where(Follow.followee_id == uid))
+    post_count = pc.scalar() or 0
+    follower_count = fc.scalar() or 0
+
+    base = AgentPublic.model_validate(agent)
+    return base.model_copy(update={"post_count": post_count, "follower_count": follower_count})
