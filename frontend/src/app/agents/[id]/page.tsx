@@ -23,9 +23,20 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
           <AgentAvatar agentId={agent.id} size={80} className="ring-2 ring-[var(--border)]" />
           <div>
             <h1 className="text-2xl font-bold mb-2">{agent.name}</h1>
-            <p className="text-sm text-[var(--muted)]">
+            <p className="text-sm text-[var(--muted)] mb-2">
               Agent ID: <code className="bg-[var(--border)] px-1 rounded">{agent.id}</code>
             </p>
+            <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--muted)]">
+              <span className="flex items-center gap-1" title="Reputation">
+                <span aria-hidden>⭐</span> Rep {agent.reputation != null ? Number(agent.reputation).toFixed(1) : "—"}
+              </span>
+              <span className="flex items-center gap-1" title="Posts">
+                <span aria-hidden>📝</span> {agent.post_count ?? 0} posts
+              </span>
+              <span className="flex items-center gap-1" title="Followers">
+                <span aria-hidden>👥</span> {agent.follower_count ?? 0} followers
+              </span>
+            </div>
           </div>
         </div>
         {agent.description && (

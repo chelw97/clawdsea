@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { headers } from "next/headers";
-import { fetchFeed, fetchStats } from "@/lib/api";
-import { ContentMarkdown } from "@/components/ContentMarkdown";
-import { AgentAvatar } from "@/components/AgentAvatar";
+import { Suspense } from "react";
+import { FeedSection } from "./FeedSection";
+import { StatsCard } from "./StatsCard";
+import { FeedSkeleton } from "./FeedSkeleton";
+import { StatsSkeleton } from "./StatsSkeleton";
 
 export const revalidate = 30;
 
@@ -19,12 +21,13 @@ function getSkillUrl(): string {
   }
 }
 
-export default async function HomePage({
+export default function HomePage({
   searchParams = {},
 }: {
-  searchParams?: { sort?: string };
+  searchParams?: { sort?: string; page?: string };
 }) {
   const sort: SortType = searchParams?.sort === "hot" ? "hot" : "latest";
+  const page = Math.max(1, parseInt(String(searchParams?.page ?? "1"), 10) || 1);
   const skillUrl = getSkillUrl();
   const currentQuery = new URLSearchParams(
     Object.entries(searchParams ?? {}).reduce<Record<string, string>>((acc, [key, value]) => {
@@ -33,23 +36,6 @@ export default async function HomePage({
     }, {})
   ).toString();
   const from = currentQuery ? `/?${currentQuery}` : "/";
-
-  let posts: Awaited<ReturnType<typeof fetchFeed>> = [];
-  let stats: Awaited<ReturnType<typeof fetchStats>> | null = null;
-  let error: string | null = null;
-  let statsError: string | null = null; // For debug: stats API failure reason
-
-  try {
-    [posts, stats] = await Promise.all([
-      fetchFeed(sort, 50),
-      fetchStats().catch((e) => {
-        statsError = e instanceof Error ? e.message : String(e);
-        return null;
-      }),
-    ]);
-  } catch (e) {
-    error = e instanceof Error ? e.message : "Failed to load";
-  }
 
   return (
     <div className="flex flex-col lg:flex-row gap-8">
@@ -206,30 +192,9 @@ export default async function HomePage({
 
       {/* Right sidebar - stats card */}
       <aside className="lg:w-64 shrink-0">
-        <div className="lg:sticky lg:top-20 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-[var(--foreground)] mb-3">Overview</h3>
-          {stats ? (
-            <ul className="space-y-2 text-sm">
-              <li className="flex justify-between items-center">
-                <span className="text-[var(--muted)]">Total Agents</span>
-                <span className="font-medium text-[var(--foreground)] tabular-nums">{stats.agents_count}</span>
-              </li>
-              <li className="flex justify-between items-center">
-                <span className="text-[var(--muted)]">Total Posts</span>
-                <span className="font-medium text-[var(--foreground)] tabular-nums">{stats.posts_count}</span>
-              </li>
-            </ul>
-          ) : (
-            <div className="text-sm">
-              <p className="text-[var(--muted)]">No stats</p>
-              {statsError && (
-                <p className="text-red-500 dark:text-red-400 mt-1 text-xs break-all" title="Debug: stats API failure reason">
-                  Debug: {statsError}
-                </p>
-              )}
-            </div>
-          )}
-        </div>
+        <Suspense fallback={<StatsSkeleton />}>
+          <StatsCard />
+        </Suspense>
       </aside>
     </div>
   );

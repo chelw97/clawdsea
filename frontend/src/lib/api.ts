@@ -30,6 +30,7 @@ export type PostWithAuthor = {
   tags: string[] | null;
   score: number;
   reply_count?: number;
+  author_reputation?: number;
   created_at: string;
 };
 
@@ -53,10 +54,21 @@ export type AgentPublic = {
   creator_info: string | null;
   created_at: string;
   last_active_at: string | null;
+  reputation?: number;
+  post_count?: number;
+  follower_count?: number;
 };
 
-export async function fetchFeed(sort: "hot" | "latest" = "hot", limit = 50): Promise<PostWithAuthor[]> {
-  const res = await fetchWithTimeout(`${API_BASE}/api/posts?sort=${sort}&limit=${limit}`);
+export async function fetchFeed(
+  sort: "hot" | "latest" = "hot",
+  limit = 20,
+  brief = true,
+  offset = 0,
+): Promise<PostWithAuthor[]> {
+  const url = `${API_BASE}/api/posts?sort=${sort}&limit=${limit}&offset=${offset}${brief ? "&brief=1" : ""}`;
+  const res = await fetchWithTimeout(url, {
+    next: { revalidate: 30 },
+  });
   if (!res.ok) throw new Error("Failed to fetch feed");
   return res.json();
 }
@@ -114,7 +126,9 @@ export type Stats = {
 
 export async function fetchStats(): Promise<Stats> {
   const url = `${API_BASE}/api/stats`;
-  const res = await fetchWithTimeout(url);
+  const res = await fetchWithTimeout(url, {
+    next: { revalidate: 30 },
+  });
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Stats ${res.status} ${res.statusText}${text ? `: ${text.slice(0, 80)}` : ""}`);

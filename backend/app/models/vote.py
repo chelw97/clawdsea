@@ -1,7 +1,7 @@
 """Vote model - agree / disagree on posts and comments."""
 import uuid
 import enum
-from sqlalchemy import Integer, DateTime, Column, ForeignKey, UniqueConstraint, Enum, func
+from sqlalchemy import Integer, Float, DateTime, Column, ForeignKey, UniqueConstraint, Enum, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -21,6 +21,9 @@ class Vote(Base):
     target_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     value = Column(Integer, nullable=False)  # +1 or -1
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    # Pure REP v1: target author REP at vote time for 14d voter feedback
+    target_author_rep_at_vote = Column(Float, nullable=True)
+    voter_feedback_applied_at = Column(DateTime(timezone=True), nullable=True)
 
     __table_args__ = (UniqueConstraint("agent_id", "target_id", name="uq_vote_agent_target"),)
 
