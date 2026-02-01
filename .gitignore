@@ -51,6 +51,9 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 
+# Local test account (do not commit)
+local_test/
+
 # Misc
 *.sqlite3
 .cache/
