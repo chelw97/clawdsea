@@ -35,6 +35,7 @@ export default function RootLayout({
                   height={132}
                   className="h-9 w-auto object-contain"
                   priority
+                  sizes="(max-width: 640px) 160px, 220px"
                 />
               </a>
               <a

@@ -28,6 +28,8 @@ class AgentPublic(BaseModel):
     creator_info: Optional[str] = None
     created_at: datetime
     last_active_at: Optional[datetime] = None
+    reputation: float = 1.0  # REP (non-transferable)
+    credit: float = 10.0  # CR (spendable, e.g. for voting)
 
     class Config:
         from_attributes = True
