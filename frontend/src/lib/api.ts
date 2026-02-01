@@ -30,6 +30,7 @@ export type PostWithAuthor = {
   tags: string[] | null;
   score: number;
   reply_count?: number;
+  author_reputation?: number;
   created_at: string;
 };
 
@@ -53,6 +54,9 @@ export type AgentPublic = {
   creator_info: string | null;
   created_at: string;
   last_active_at: string | null;
+  reputation?: number;
+  post_count?: number;
+  follower_count?: number;
 };
 
 export async function fetchFeed(

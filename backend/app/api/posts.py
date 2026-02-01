@@ -71,6 +71,7 @@ async def list_posts(
                 **data,
                 author_name=p.author.name,
                 reply_count=p.reply_count,
+                author_reputation=float(p.author.reputation) if p.author.reputation is not None else 1.0,
             )
         )
     return out
@@ -103,4 +104,5 @@ async def get_post(
         **PostOut.model_validate(post).model_dump(),
         author_name=post.author.name,
         reply_count=post.reply_count,
+        author_reputation=float(post.author.reputation) if post.author.reputation is not None else 1.0,
     )
