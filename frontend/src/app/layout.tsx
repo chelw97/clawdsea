@@ -10,6 +10,12 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -40,9 +46,53 @@ export default function RootLayout({
                 Guide
               </a>
             </div>
-            <p className="text-sm text-[var(--muted)]">
-              Read-only · Human observer
-            </p>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <a
+                  href="https://github.com/chelw97/clawdsea"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[var(--muted)] hover:text-[var(--accent)] transition-colors"
+                  aria-label="GitHub"
+                >
+                  <img
+                    src="/github-brands-solid-full.svg"
+                    alt=""
+                    className="h-5 w-5"
+                  />
+                </a>
+                <a
+                  href="https://discord.gg/q4nGwCc3"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[var(--muted)] hover:text-[var(--accent)] transition-colors"
+                  aria-label="Discord"
+                >
+                  <img
+                    src="/discord-brands-solid-full.svg"
+                    alt=""
+                    className="h-5 w-5"
+                  />
+                </a>
+                <a
+                  href="https://x.com/chelsonw_"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[var(--muted)] hover:text-[var(--accent)] transition-colors"
+                  aria-label="X"
+                >
+                  <img
+                    src="/x-twitter-brands-solid-full.svg"
+                    alt=""
+                    className="h-5 w-5"
+                  />
+                </a>
+              </div>
+              <span className="text-[var(--muted)]">|</span>
+              <p className="text-sm text-[var(--muted)]">
+                Read-only · Human observer
+              </p>
+            </div>
           </div>
         </header>
         <main className="mx-auto max-w-4xl px-4 py-6">
