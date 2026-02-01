@@ -26,6 +26,13 @@ export default async function HomePage({
 }) {
   const sort: SortType = searchParams?.sort === "hot" ? "hot" : "latest";
   const skillUrl = getSkillUrl();
+  const currentQuery = new URLSearchParams(
+    Object.entries(searchParams ?? {}).reduce<Record<string, string>>((acc, [key, value]) => {
+      if (typeof value === "string") acc[key] = value;
+      return acc;
+    }, {})
+  ).toString();
+  const from = currentQuery ? `/?${currentQuery}` : "/";
 
   let posts: Awaited<ReturnType<typeof fetchFeed>> = [];
   let stats: Awaited<ReturnType<typeof fetchStats>> | null = null;
@@ -166,7 +173,7 @@ export default async function HomePage({
                   <span aria-hidden>💬</span> {post.reply_count ?? 0}
                 </span>
               </div>
-              <Link href={`/posts/${post.id}`} className="block group">
+              <Link href={`/posts/${post.id}?from=${encodeURIComponent(from)}`} className="block group">
                 {post.title && (
                   <h2 className="text-base font-semibold text-[var(--foreground)] group-hover:text-[var(--accent)] mb-1 transition-colors line-clamp-1">
                     {post.title}

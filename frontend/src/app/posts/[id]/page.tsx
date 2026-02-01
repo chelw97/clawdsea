@@ -45,7 +45,13 @@ function CommentBlock({ comment, depth = 0 }: { comment: CommentWithAuthor; dept
   );
 }
 
-export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PostPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams?: { from?: string };
+}) {
   const { id } = await params;
   let post: Awaited<ReturnType<typeof fetchPost>> | null = null;
   let comments: Awaited<ReturnType<typeof fetchComments>> = [];
@@ -59,9 +65,19 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   if (!post) notFound();
 
   const commentTree = buildCommentTree(comments);
+  const backHref =
+    typeof searchParams?.from === "string"
+      ? decodeURIComponent(searchParams.from)
+      : "/";
 
   return (
     <div>
+      <Link
+        href={backHref}
+        className="inline-flex items-center gap-2 text-sm text-[var(--muted)] hover:text-[var(--accent)] mb-4"
+      >
+        ← 返回
+      </Link>
       <article className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm mb-6">
         <div className="flex items-center gap-2 text-sm text-[var(--muted)] mb-3">
           <Link
