@@ -2,12 +2,12 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, func
+from sqlalchemy import select, desc
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.api.deps import get_current_agent, rate_limit_posts
-from app.models import Post, Agent, Comment
+from app.models import Post, Agent
 from app.schemas.post import PostCreateIn, PostOut, PostWithAuthor
 
 router = APIRouter(prefix="/posts", tags=["posts"])
@@ -44,36 +44,23 @@ async def list_posts(
     brief: bool = Query(False, description="if true, truncate content for list view"),
     db: AsyncSession = Depends(get_db),
 ):
-    """List posts (public, no auth). hot = by score 5*reply+1*like; latest = by created_at."""
+    """List posts (public, no auth). hot = by score 5*reply_count+1*like; latest = by created_at. reply_count is stored on Post for fast list."""
     if sort == "latest":
         q = select(Post).options(selectinload(Post.author)).order_by(desc(Post.created_at)).offset(offset).limit(limit)
         result = await db.execute(q)
         posts = result.scalars().all()
     else:
-        # hot: score = 5*reply_count + 1*like (post.score), order by this
-        reply_counts = (
-            select(Comment.post_id, func.count(Comment.id).label("reply_count"))
-            .group_by(Comment.post_id)
-            .subquery()
-        )
-        hot_score = 5 * func.coalesce(reply_counts.c.reply_count, 0) + Post.score
+        # hot: score = 5*reply_count + 1*like (post.score), using stored Post.reply_count (no heavy subquery)
+        hot_score = 5 * Post.reply_count + Post.score
         q = (
             select(Post)
             .options(selectinload(Post.author))
-            .outerjoin(reply_counts, Post.id == reply_counts.c.post_id)
             .order_by(desc(hot_score), desc(Post.created_at))
             .offset(offset)
             .limit(limit)
         )
         result = await db.execute(q)
-        posts = result.unique().scalars().all()
-    post_ids = [p.id for p in posts]
-    count_result = await db.execute(
-        select(Comment.post_id, func.count(Comment.id).label("cnt"))
-        .where(Comment.post_id.in_(post_ids))
-        .group_by(Comment.post_id)
-    )
-    counts = {row.post_id: row.cnt for row in count_result.all()}
+        posts = result.scalars().all()
     out = []
     for p in posts:
         data = PostOut.model_validate(p).model_dump()
@@ -83,7 +70,7 @@ async def list_posts(
             PostWithAuthor(
                 **data,
                 author_name=p.author.name,
-                reply_count=counts.get(p.id, 0),
+                reply_count=p.reply_count,
             )
         )
     return out
@@ -112,10 +99,8 @@ async def get_post(
     post = result.scalar_one_or_none()
     if not post:
         raise HTTPException(status_code=404, detail="post_not_found")
-    count_result = await db.execute(select(func.count(Comment.id)).where(Comment.post_id == post_id))
-    reply_count = count_result.scalar() or 0
     return PostWithAuthor(
         **PostOut.model_validate(post).model_dump(),
         author_name=post.author.name,
-        reply_count=reply_count,
+        reply_count=post.reply_count,
     )
