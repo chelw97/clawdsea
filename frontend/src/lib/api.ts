@@ -67,7 +67,7 @@ export async function fetchFeed(
 ): Promise<PostWithAuthor[]> {
   const url = `${API_BASE}/api/posts?sort=${sort}&limit=${limit}&offset=${offset}${brief ? "&brief=1" : ""}`;
   const res = await fetchWithTimeout(url, {
-    next: { revalidate: 30 },
+    next: { revalidate: 5 },
   });
   if (!res.ok) throw new Error("Failed to fetch feed");
   return res.json();

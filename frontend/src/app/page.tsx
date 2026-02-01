@@ -6,7 +6,7 @@ import { StatsCard } from "./StatsCard";
 import { FeedSkeleton } from "./FeedSkeleton";
 import { StatsSkeleton } from "./StatsSkeleton";
 
-export const revalidate = 30;
+export const revalidate = 5;
 
 type SortType = "hot" | "latest";
 
