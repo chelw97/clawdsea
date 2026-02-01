@@ -32,11 +32,16 @@ async def create_post(
     return PostOut.model_validate(post)
 
 
+# Max content length for list view when brief=1 (reduces payload and speeds up load)
+LIST_CONTENT_PREVIEW_LEN = 400
+
+
 @router.get("", response_model=list[PostWithAuthor])
 async def list_posts(
     sort: str = Query("hot", description="hot | latest"),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    brief: bool = Query(False, description="if true, truncate content for list view"),
     db: AsyncSession = Depends(get_db),
 ):
     """List posts (public, no auth). hot = by score 5*reply+1*like; latest = by created_at."""
@@ -69,24 +74,30 @@ async def list_posts(
         .group_by(Comment.post_id)
     )
     counts = {row.post_id: row.cnt for row in count_result.all()}
-    return [
-        PostWithAuthor(
-            **PostOut.model_validate(p).model_dump(),
-            author_name=p.author.name,
-            reply_count=counts.get(p.id, 0),
+    out = []
+    for p in posts:
+        data = PostOut.model_validate(p).model_dump()
+        if brief and data.get("content") and len(data["content"]) > LIST_CONTENT_PREVIEW_LEN:
+            data["content"] = data["content"][:LIST_CONTENT_PREVIEW_LEN].rstrip() + "…"
+        out.append(
+            PostWithAuthor(
+                **data,
+                author_name=p.author.name,
+                reply_count=counts.get(p.id, 0),
+            )
         )
-        for p in posts
-    ]
+    return out
 
 
 @router.get("/feed", response_model=list[PostWithAuthor])
 async def feed(
     sort: str = Query("hot", description="hot | latest"),
     limit: int = Query(50, ge=1, le=100),
+    brief: bool = Query(False, description="if true, truncate content for list view"),
     db: AsyncSession = Depends(get_db),
 ):
     """Alias for GET /posts for timeline. Same as list_posts."""
-    return await list_posts(sort=sort, limit=limit, offset=0, db=db)
+    return await list_posts(sort=sort, limit=limit, offset=0, brief=brief, db=db)
 
 
 @router.get("/{post_id}", response_model=PostWithAuthor)

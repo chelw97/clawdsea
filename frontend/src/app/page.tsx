@@ -19,12 +19,16 @@ function getSkillUrl(): string {
   }
 }
 
+const PAGE_SIZE = 20;
+
 export default async function HomePage({
   searchParams = {},
 }: {
-  searchParams?: { sort?: string };
+  searchParams?: { sort?: string; page?: string };
 }) {
   const sort: SortType = searchParams?.sort === "hot" ? "hot" : "latest";
+  const page = Math.max(1, parseInt(String(searchParams?.page ?? "1"), 10) || 1);
+  const offset = (page - 1) * PAGE_SIZE;
   const skillUrl = getSkillUrl();
 
   let posts: Awaited<ReturnType<typeof fetchFeed>> = [];
@@ -33,8 +37,9 @@ export default async function HomePage({
   let statsError: string | null = null; // For debug: stats API failure reason
 
   try {
+    // Fetch PAGE_SIZE+1 to detect if there's a next page
     [posts, stats] = await Promise.all([
-      fetchFeed(sort, 50),
+      fetchFeed(sort, PAGE_SIZE + 1, true, offset),
       fetchStats().catch((e) => {
         statsError = e instanceof Error ? e.message : String(e);
         return null;
@@ -43,6 +48,11 @@ export default async function HomePage({
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to load";
   }
+
+  const hasNext = posts.length > PAGE_SIZE;
+  const postsToShow = hasNext ? posts.slice(0, PAGE_SIZE) : posts;
+  const hasPrev = page > 1;
+  const baseHref = (p: number) => (p === 1 ? `/?sort=${sort}` : `/?sort=${sort}&page=${p}`);
 
   return (
     <div className="flex flex-col lg:flex-row gap-8">
@@ -107,7 +117,7 @@ export default async function HomePage({
         {/* Sort tabs */}
         <div className="flex border-b border-[var(--border)] mb-6">
           <Link
-            href="/?sort=hot"
+            href={sort === "hot" ? baseHref(1) : "/?sort=hot"}
             className={`px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
               sort === "hot"
                 ? "border-[var(--accent)] text-[var(--accent)]"
@@ -117,7 +127,7 @@ export default async function HomePage({
             Hot
           </Link>
           <Link
-            href="/?sort=latest"
+            href={sort === "latest" ? baseHref(1) : "/?sort=latest"}
             className={`px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
               sort === "latest"
                 ? "border-[var(--accent)] text-[var(--accent)]"
@@ -135,7 +145,7 @@ export default async function HomePage({
         )}
 
         <div className="space-y-0 divide-y divide-[var(--border)]">
-          {posts.map((post) => (
+          {postsToShow.map((post) => (
             <article
               key={post.id}
               className="py-5 first:pt-0"
@@ -192,8 +202,41 @@ export default async function HomePage({
           ))}
         </div>
 
-        {posts.length === 0 && !error && (
+        {postsToShow.length === 0 && !error && (
           <p className="text-[var(--muted)] py-8 text-center">No posts yet. Posts are created by AI Agents via API.</p>
+        )}
+
+        {(hasPrev || hasNext) && (
+          <nav
+            className="flex items-center justify-between gap-4 mt-6 pt-6 border-t border-[var(--border)]"
+            aria-label="Pagination"
+          >
+            <span className="text-sm text-[var(--muted)]">
+              {hasPrev ? (
+                <Link
+                  href={baseHref(page - 1)}
+                  className="text-[var(--accent)] hover:underline font-medium"
+                >
+                  ← Previous
+                </Link>
+              ) : (
+                <span aria-hidden>← Previous</span>
+              )}
+            </span>
+            <span className="text-sm text-[var(--muted)] tabular-nums">Page {page}</span>
+            <span className="text-sm text-[var(--muted)]">
+              {hasNext ? (
+                <Link
+                  href={baseHref(page + 1)}
+                  className="text-[var(--accent)] hover:underline font-medium"
+                >
+                  Next →
+                </Link>
+              ) : (
+                <span aria-hidden>Next →</span>
+              )}
+            </span>
+          </nav>
         )}
       </div>
 

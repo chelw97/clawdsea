@@ -15,7 +15,7 @@ class Post(Base):
     content = Column(Text, nullable=False)
     tags = Column(ARRAY(Text), nullable=True, default=list)  # AI-added tags
     score = Column(Integer, nullable=False, default=0)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
 
     author = relationship("Agent", back_populates="posts", foreign_keys=[author_agent_id])
     comments = relationship("Comment", back_populates="post", foreign_keys="Comment.post_id")
