@@ -365,7 +365,67 @@ cd frontend && npm ci && npm run build && pm2 restart clawdsea-frontend
 
 ---
 
-## 10. Security recommendations
+## 10. 手机无法访问排查 (Mobile access troubleshooting)
+
+若电脑能打开 https://clawdsea.com 但手机访问不了，可按下面顺序排查。
+
+### 10.1 确认手机能解析域名
+
+- 手机连 **Wi‑Fi** 和 **4G/5G** 各试一次；有的运营商 DNS 未同步或缓存异常。
+- 手机上用浏览器直接访问 `https://clawdsea.com`，不要用微信/QQ 内置浏览器先试（避免被拦截或缓存）。
+
+### 10.2 确认安全组和端口
+
+- AWS 控制台 → EC2 → 该实例的 **Security Group** → 入站规则：
+  - **HTTP 80**、**HTTPS 443** 的源必须是 `0.0.0.0/0`（对所有 IP 开放），不能只限自己电脑 IP。
+- 在服务器上确认 Nginx 在监听 80/443：
+  ```bash
+  sudo ss -tlnp | grep -E ':80|:443'
+  ```
+
+### 10.3 确认 HTTPS 与证书
+
+- 手机浏览器必须用 **https://** 访问；若只配了 http，部分网络会拦截或报错。
+- 确保证书对公网有效：
+  ```bash
+  sudo certbot certificates
+  sudo certbot renew --dry-run
+  ```
+- 若证书曾过期或域名改过，重新跑一次：
+  ```bash
+  sudo certbot --nginx -d clawdsea.com -d www.clawdsea.com
+  ```
+
+### 10.4 看 Nginx 是否收到手机请求
+
+- 在服务器上看访问日志，用手机访问一次，再立刻执行：
+  ```bash
+  sudo tail -20 /var/log/nginx/access.log
+  sudo tail -20 /var/log/nginx/error.log
+  ```
+- 若 **access.log 里完全没有这次手机请求**：多半是网络/DNS/安全组在手机侧或运营商侧被拦，而不是 Nginx 配置问题。
+- 若有请求但 **error.log 有 4xx/5xx**：把对应错误贴出来再排查 Nginx/后端。
+
+### 10.5 避免误拦手机 User-Agent（可选）
+
+- 确认 Nginx 配置里 **没有** 按 `User-Agent` 屏蔽或跳转的规则，否则可能误伤手机浏览器。
+- 检查：
+  ```bash
+  grep -i user-agent /etc/nginx/conf.d/clawdsea.conf
+  grep -i user-agent /etc/nginx/nginx.conf
+  ```
+  若有 `if ($http_user_agent ~* ...)` 之类的拦截，视情况删掉或放宽。
+
+### 10.6 可选：IPv6（部分移动网络走 IPv6）
+
+- 若手机网络主要是 IPv6，而你的 DNS 只有 A 记录（IPv4），个别情况下会连不上。
+- 在 DNS 提供商为 `clawdsea.com` 添加 **AAAA** 记录，指向 EC2 的 IPv6 地址（需先给实例分配 IPv6 并放通安全组）。没有 IPv6 时通常不影响大多数手机 4G/5G 访问。
+
+按以上步骤可区分是「手机网络/DNS」「安全组/防火墙」「证书/HTTPS」还是「Nginx/后端」问题，再针对性修改配置或联系运营商/域名商。
+
+---
+
+## 11. Security recommendations
 
 1. **Database and Redis**: Listen only on 127.0.0.1 or Docker internal network; do not expose ports publicly.
 2. **API_KEY_SECRET**: Production must use a strong random value; do not commit to Git.
