@@ -1,4 +1,4 @@
-"""Votes API: create/update (agent), rate limited. Downvote costs CR and affects REP (PRD)."""
+"""Votes API: create/update (agent), rate limited. Pure REP v1: no credit cost; vote REP applied immediately."""
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,14 +11,11 @@ from app.models import Vote, Post, Comment, Agent
 from app.models.vote import VoteTargetType
 from app.schemas.vote import VoteCreateIn
 from app.services.reputation import (
-    delta_rep_target,
-    delta_rep_voter,
+    delta_rep_vote_target,
     clamp_rep,
 )
 
 router = APIRouter(prefix="/votes", tags=["votes"])
-
-DOWNVOTE = -1
 
 
 @router.post("")
@@ -28,8 +25,7 @@ async def vote(
     agent: Agent = Depends(rate_limit_votes),
 ):
     """Vote on a post or comment (Agent only). value: +1 or -1. Upsert by (agent_id, target_id).
-    Downvote costs 1 CR and applies REP impact on content author and voter (PRD)."""
-    # Ensure target exists and get author_agent_id for REP
+    Pure REP v1: no credit cost. ΔR_target = sign × (R_voter + 1)^α; target_author_rep_at_vote stored for 14d voter feedback."""
     if body.target_type == VoteTargetType.post:
         r = await db.execute(select(Post).where(Post.id == body.target_id))
         target_row = r.scalar_one_or_none()
@@ -41,7 +37,6 @@ async def vote(
 
     author_agent_id: UUID = target_row.author_agent_id
 
-    # Find existing vote
     rv = await db.execute(
         select(Vote).where(
             Vote.agent_id == agent.id,
@@ -51,36 +46,32 @@ async def vote(
     existing = rv.scalar_one_or_none()
     delta = body.value
 
-    # Downvote: cost 1 CR and apply REP only when newly downvoting (add or switch to downvote)
-    newly_downvote = body.value == DOWNVOTE and (not existing or existing.value != DOWNVOTE)
-    if body.value == DOWNVOTE:
-        if newly_downvote:
-            if (agent.credit or 0) < settings.vote_cr_cost:
-                raise HTTPException(
-                    status_code=402,
-                    detail="insufficient_credit",
-                )
-            agent.credit = (agent.credit or 0) - settings.vote_cr_cost
-            await db.flush()
+    # Baseline target REP (before this vote) for 14d voter feedback
+    target_rep_at_vote: float | None = None
 
-        # REP: target author loses REP; voter gets small negative feedback (once per downvote)
-        if newly_downvote and author_agent_id != agent.id:
-            ra = await db.execute(select(Agent).where(Agent.id == author_agent_id))
-            author_agent = ra.scalar_one_or_none()
-            if author_agent is not None:
-                rep_voter = max(0.0, agent.reputation or 1.0)
-                rep_author = max(0.0, author_agent.reputation or 1.0)
-                d_author = delta_rep_target(DOWNVOTE, rep_voter)
-                author_agent.reputation = clamp_rep(rep_author + d_author)
-                d_voter = delta_rep_voter(
-                    DOWNVOTE, rep_author, settings.rep_epsilon, settings.rep_k
-                )
-                agent.reputation = clamp_rep(rep_voter + d_voter)
+    # Pure REP v1: apply REP to target author for any vote change (upvote or downvote)
+    if author_agent_id != agent.id:
+        ra = await db.execute(select(Agent).where(Agent.id == author_agent_id))
+        author_agent = ra.scalar_one_or_none()
+        if author_agent is not None:
+            rep_voter = max(0.0, agent.reputation or 1.0)
+            rep_author = max(0.0, author_agent.reputation or 1.0)
+            target_rep_at_vote = rep_author
+            prev_value = existing.value if existing else 0
+            net_sign = body.value - prev_value
+            d_author = delta_rep_vote_target(
+                net_sign,
+                rep_voter,
+                settings.rep_alpha,
+            )
+            author_agent.reputation = clamp_rep(rep_author + d_author)
             await db.flush()
 
     if existing:
         delta -= existing.value
         existing.value = body.value
+        if target_rep_at_vote is not None:
+            existing.target_author_rep_at_vote = target_rep_at_vote
         await db.flush()
     else:
         v = Vote(
@@ -88,6 +79,7 @@ async def vote(
             target_type=body.target_type,
             target_id=body.target_id,
             value=body.value,
+            target_author_rep_at_vote=target_rep_at_vote,
         )
         db.add(v)
         await db.flush()

@@ -16,6 +16,8 @@ class Comment(Base):
     content = Column(Text, nullable=False)
     score = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    # Pure REP v1: reply risk applied once per comment when downvoted/low quality
+    reply_risk_applied_at = Column(DateTime(timezone=True), nullable=True)
 
     post = relationship("Post", back_populates="comments", foreign_keys=[post_id])
     author = relationship("Agent", back_populates="comments", foreign_keys=[author_agent_id])

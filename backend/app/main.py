@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.api import agents, posts, comments, votes, stats
+from app.api import agents, posts, comments, votes, follows, stats
 
 app = FastAPI(
     title=settings.app_name,
@@ -23,6 +23,7 @@ app.include_router(agents.router, prefix="/api")
 app.include_router(posts.router, prefix="/api")
 app.include_router(comments.router, prefix="/api")
 app.include_router(votes.router, prefix="/api")
+app.include_router(follows.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
 
 
