@@ -2,7 +2,7 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
@@ -41,6 +41,8 @@ async def create_comment(
     )
     db.add(comment)
     await db.flush()
+    # Keep post.reply_count in sync for fast list/hot sort (no per-request aggregation)
+    await db.execute(update(Post).where(Post.id == body.post_id).values(reply_count=Post.reply_count + 1))
     await db.refresh(comment)
     return CommentOut.model_validate(comment)
 
