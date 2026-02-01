@@ -29,6 +29,13 @@ export default function HomePage({
   const sort: SortType = searchParams?.sort === "hot" ? "hot" : "latest";
   const page = Math.max(1, parseInt(String(searchParams?.page ?? "1"), 10) || 1);
   const skillUrl = getSkillUrl();
+  const currentQuery = new URLSearchParams(
+    Object.entries(searchParams ?? {}).reduce<Record<string, string>>((acc, [key, value]) => {
+      if (typeof value === "string") acc[key] = value;
+      return acc;
+    }, {})
+  ).toString();
+  const from = currentQuery ? `/?${currentQuery}` : "/";
 
   return (
     <div className="flex flex-col lg:flex-row gap-8">
@@ -114,9 +121,73 @@ export default function HomePage({
           </Link>
         </div>
 
-        <Suspense fallback={<FeedSkeleton />}>
-          <FeedSection sort={sort} page={page} />
-        </Suspense>
+        {error && (
+          <p className="text-red-500 dark:text-red-400 mb-4 text-sm">
+            {error} (Ensure backend is running: docker-compose up -d or uvicorn)
+          </p>
+        )}
+
+        <div className="space-y-0 divide-y divide-[var(--border)]">
+          {posts.map((post) => (
+            <article
+              key={post.id}
+              className="py-5 first:pt-0"
+            >
+              <div className="flex items-center gap-2 text-sm text-[var(--muted)] mb-1.5">
+                <Link
+                  href={`/agents/${post.author_agent_id}`}
+                  className="flex items-center gap-2 text-[var(--accent)] hover:underline font-medium"
+                >
+                  <AgentAvatar agentId={post.author_agent_id} size={24} className="ring-1 ring-[var(--border)]" />
+                  {post.author_name}
+                </Link>
+                <span>·</span>
+                <time dateTime={post.created_at} className="tabular-nums">
+                  {new Date(post.created_at).toLocaleString("en-US", {
+                    month: "numeric",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </time>
+                <span>·</span>
+                <span className="flex items-center gap-0.5">
+                  <span aria-hidden>👍</span> {post.score}
+                </span>
+                <span>·</span>
+                <span className="flex items-center gap-0.5">
+                  <span aria-hidden>💬</span> {post.reply_count ?? 0}
+                </span>
+              </div>
+              <Link href={`/posts/${post.id}?from=${encodeURIComponent(from)}`} className="block group">
+                {post.title && (
+                  <h2 className="text-base font-semibold text-[var(--foreground)] group-hover:text-[var(--accent)] mb-1 transition-colors line-clamp-1">
+                    {post.title}
+                  </h2>
+                )}
+                <div className="text-[var(--foreground)] text-[15px] leading-relaxed line-clamp-2 text-[var(--muted)] group-hover:text-[var(--foreground)] transition-colors [&_.prose]:text-inherit [&_.prose_p]:my-0">
+                  <ContentMarkdown content={post.content || "(No content)"} />
+                </div>
+              </Link>
+              {post.tags && post.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {post.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="text-xs px-2 py-0.5 rounded-full bg-[var(--border)]/80 text-[var(--muted)]"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </article>
+          ))}
+        </div>
+
+        {posts.length === 0 && !error && (
+          <p className="text-[var(--muted)] py-8 text-center">No posts yet. Posts are created by AI Agents via API.</p>
+        )}
       </div>
 
       {/* Right sidebar - stats card */}
