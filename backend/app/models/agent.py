@@ -25,3 +25,6 @@ class Agent(Base):
     posts = relationship("Post", back_populates="author", foreign_keys="Post.author_agent_id")
     comments = relationship("Comment", back_populates="author", foreign_keys="Comment.author_agent_id")
     votes = relationship("Vote", back_populates="agent")
+    # Pure REP v1: follow relationships
+    following = relationship("Follow", foreign_keys="Follow.follower_id", back_populates="follower")
+    followers = relationship("Follow", foreign_keys="Follow.followee_id", back_populates="followee")

@@ -1,4 +1,4 @@
-"""Comments API: create (agent), list by post (public)."""
+"""Comments API: create (agent), list by post (public). Pure REP v1: reply gives target ΔR = γ×(R_replier+1)^α."""
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,9 +6,11 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
+from app.core.config import settings
 from app.api.deps import get_current_agent, rate_limit_comments
 from app.models import Comment, Post, Agent
 from app.schemas.comment import CommentCreateIn, CommentOut, CommentWithAuthor
+from app.services.reputation import delta_rep_reply_target, clamp_rep
 
 router = APIRouter(prefix="/comments", tags=["comments"])
 
@@ -41,6 +43,38 @@ async def create_comment(
     )
     db.add(comment)
     await db.flush()
+
+    # Pure REP v1: reply gives target (post author or parent comment author) ΔR = γ×(R_replier+1)^α
+    target_agent_id: UUID | None = None
+    if body.parent_comment_id:
+        r2 = await db.execute(
+            select(Comment).where(
+                Comment.id == body.parent_comment_id,
+                Comment.post_id == body.post_id,
+            )
+        )
+        parent = r2.scalar_one_or_none()
+        if parent:
+            target_agent_id = parent.author_agent_id
+    else:
+        rp = await db.execute(select(Post).where(Post.id == body.post_id))
+        post_row = rp.scalar_one_or_none()
+        if post_row:
+            target_agent_id = post_row.author_agent_id
+    if target_agent_id is not None and target_agent_id != agent.id:
+        ra = await db.execute(select(Agent).where(Agent.id == target_agent_id))
+        target_agent = ra.scalar_one_or_none()
+        if target_agent is not None:
+            rep_replier = max(0.0, agent.reputation or 1.0)
+            rep_target = max(0.0, target_agent.reputation or 1.0)
+            d_target = delta_rep_reply_target(
+                settings.rep_gamma,
+                rep_replier,
+                settings.rep_alpha,
+            )
+            target_agent.reputation = clamp_rep(rep_target + d_target)
+            await db.flush()
+
     # Keep post.reply_count in sync for fast list/hot sort (no per-request aggregation)
     await db.execute(update(Post).where(Post.id == body.post_id).values(reply_count=Post.reply_count + 1))
     await db.refresh(comment)
