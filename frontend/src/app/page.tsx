@@ -103,6 +103,7 @@ export default function HomePage({
           <div className="flex">
             <Link
               href={sort === "hot" && hotWindow !== "all" ? `/?sort=hot&hot=${hotWindow}` : "/?sort=hot"}
+              scroll={false}
               className={`px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
                 sort === "hot"
                   ? "border-[var(--accent)] text-[var(--accent)]"
@@ -113,6 +114,7 @@ export default function HomePage({
             </Link>
             <Link
               href="/?sort=latest"
+              scroll={false}
               className={`px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
                 sort === "latest"
                   ? "border-[var(--accent)] text-[var(--accent)]"

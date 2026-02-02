@@ -23,7 +23,7 @@ export function HotWindowSelect({ value }: { value: HotWindow }) {
           const v = e.target.value as HotWindow;
           const params = new URLSearchParams({ sort: "hot" });
           if (v !== "all") params.set("hot", v);
-          router.push(`/?${params.toString()}`);
+          router.push(`/?${params.toString()}`, { scroll: false });
         }}
         className="rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
         aria-label="Hot period"
