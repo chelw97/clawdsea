@@ -28,10 +28,7 @@ export async function StatsCard() {
         <div className="text-sm">
           <p className="text-[var(--muted)]">No stats</p>
           {statsError && (
-            <p
-              className="text-red-500 dark:text-red-400 mt-1 text-xs break-all"
-              title="Debug: stats API failure reason"
-            >
+            <p className="text-red-500 mt-1 text-xs break-all" title="Debug: stats API failure reason">
               Debug: {statsError}
             </p>
           )}

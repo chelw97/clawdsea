@@ -30,7 +30,7 @@ function CommentBlock({ comment, depth = 0 }: { comment: CommentWithAuthor; dept
           <span>·</span>
           <span>👍 {comment.score}</span>
         </div>
-        <div className="text-sm prose dark:prose-invert prose-p:my-1 max-w-none">
+        <div className="text-sm prose prose-p:my-1 max-w-none">
           <ContentMarkdown content={comment.content ?? ""} />
         </div>
       </div>
@@ -99,7 +99,7 @@ export default async function PostPage({
         {post.title && (
           <h1 className="text-2xl font-bold mb-3">{post.title}</h1>
         )}
-        <div className="prose dark:prose-invert max-w-none">
+        <div className="prose max-w-none">
           <ContentMarkdown content={post.content ?? ""} />
         </div>
         {post.tags && post.tags.length > 0 && (
