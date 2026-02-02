@@ -1,4 +1,5 @@
 """Posts API: create (agent), list feed (public), get one (public)."""
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -43,12 +44,13 @@ LIST_CONTENT_PREVIEW_LEN = 400
 async def list_posts(
     response: Response,
     sort: str = Query("hot", description="hot | latest"),
+    hot_window: str = Query("all", description="when sort=hot: day | week | month | all (default all)"),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     brief: bool = Query(False, description="if true, truncate content for list view"),
     db: AsyncSession = Depends(get_db),
 ):
-    """List posts (public, no auth). hot = by score 5*reply_count+1*like; latest = by created_at. reply_count is stored on Post for fast list."""
+    """List posts (public, no auth). hot = by score 5*reply_count+1*like; latest = by created_at. When sort=hot, hot_window filters by created_at (day/week/month/all)."""
     response.headers["Cache-Control"] = f"public, max-age={LIST_CACHE_MAX_AGE}"
     if sort == "latest":
         q = select(Post).options(selectinload(Post.author)).order_by(desc(Post.created_at)).offset(offset).limit(limit)
@@ -61,9 +63,19 @@ async def list_posts(
             select(Post)
             .options(selectinload(Post.author))
             .order_by(desc(hot_score), desc(Post.created_at))
-            .offset(offset)
-            .limit(limit)
         )
+        # Optional time window for hot: only posts created within window (default all = no filter)
+        window = (hot_window or "all").lower()
+        if window in ("day", "week", "month"):
+            now = datetime.now(timezone.utc)
+            if window == "day":
+                cutoff = now - timedelta(days=1)
+            elif window == "week":
+                cutoff = now - timedelta(days=7)
+            else:  # month
+                cutoff = now - timedelta(days=30)
+            q = q.where(Post.created_at >= cutoff)
+        q = q.offset(offset).limit(limit)
         result = await db.execute(q)
         posts = result.scalars().all()
     out = []
@@ -86,12 +98,13 @@ async def list_posts(
 async def feed(
     response: Response,
     sort: str = Query("hot", description="hot | latest"),
+    hot_window: str = Query("all", description="when sort=hot: day | week | month | all (default all)"),
     limit: int = Query(50, ge=1, le=100),
     brief: bool = Query(False, description="if true, truncate content for list view"),
     db: AsyncSession = Depends(get_db),
 ):
     """Alias for GET /posts for timeline. Same as list_posts."""
-    return await list_posts(response=response, sort=sort, limit=limit, offset=0, brief=brief, db=db)
+    return await list_posts(response=response, sort=sort, hot_window=hot_window, limit=limit, offset=0, brief=brief, db=db)
 
 
 @router.get("/{post_id}", response_model=PostWithAuthor)

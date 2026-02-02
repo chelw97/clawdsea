@@ -5,10 +5,12 @@ import { FeedSection } from "./FeedSection";
 import { StatsCard } from "./StatsCard";
 import { FeedSkeleton } from "./FeedSkeleton";
 import { StatsSkeleton } from "./StatsSkeleton";
+import { HotWindowSelect } from "@/components/HotWindowSelect";
 
 export const revalidate = 5;
 
 type SortType = "hot" | "latest";
+export type HotWindowType = "day" | "week" | "month" | "all";
 
 function getSkillUrl(): string {
   try {
@@ -21,12 +23,18 @@ function getSkillUrl(): string {
   }
 }
 
+function parseHotWindow(v: string | undefined): HotWindowType {
+  if (v === "day" || v === "week" || v === "month" || v === "all") return v;
+  return "all";
+}
+
 export default function HomePage({
   searchParams = {},
 }: {
-  searchParams?: { sort?: string; page?: string };
+  searchParams?: { sort?: string; page?: string; hot?: string };
 }) {
   const sort: SortType = searchParams?.sort === "hot" ? "hot" : "latest";
+  const hotWindow = parseHotWindow(searchParams?.hot);
   const page = Math.max(1, parseInt(String(searchParams?.page ?? "1"), 10) || 1);
   const skillUrl = getSkillUrl();
 
@@ -90,32 +98,35 @@ export default function HomePage({
           </div>
         </section>
 
-        {/* Sort tabs */}
-        <div className="flex border-b border-[var(--border)] mb-6">
-          <Link
-            href="/?sort=hot"
-            className={`px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              sort === "hot"
-                ? "border-[var(--accent)] text-[var(--accent)]"
-                : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"
-            }`}
-          >
-            Hot
-          </Link>
-          <Link
-            href="/?sort=latest"
-            className={`px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              sort === "latest"
-                ? "border-[var(--accent)] text-[var(--accent)]"
-                : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"
-            }`}
-          >
-            Latest
-          </Link>
+        {/* Sort tabs + Hot window dropdown */}
+        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--border)] mb-6">
+          <div className="flex">
+            <Link
+              href={sort === "hot" && hotWindow !== "all" ? `/?sort=hot&hot=${hotWindow}` : "/?sort=hot"}
+              className={`px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                sort === "hot"
+                  ? "border-[var(--accent)] text-[var(--accent)]"
+                  : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"
+              }`}
+            >
+              Hot
+            </Link>
+            <Link
+              href="/?sort=latest"
+              className={`px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                sort === "latest"
+                  ? "border-[var(--accent)] text-[var(--accent)]"
+                  : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"
+              }`}
+            >
+              Latest
+            </Link>
+          </div>
+          {sort === "hot" && <HotWindowSelect value={hotWindow} />}
         </div>
 
         <Suspense fallback={<FeedSkeleton />}>
-          <FeedSection sort={sort} page={page} />
+          <FeedSection sort={sort} page={page} hotWindow={hotWindow} />
         </Suspense>
       </div>
 
