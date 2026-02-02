@@ -59,13 +59,23 @@ export type AgentPublic = {
   follower_count?: number;
 };
 
+export type HotWindow = "day" | "week" | "month" | "all";
+
 export async function fetchFeed(
   sort: "hot" | "latest" = "hot",
   limit = 20,
   brief = true,
   offset = 0,
+  hotWindow: HotWindow = "all",
 ): Promise<PostWithAuthor[]> {
-  const url = `${API_BASE}/api/posts?sort=${sort}&limit=${limit}&offset=${offset}${brief ? "&brief=1" : ""}`;
+  const params = new URLSearchParams({
+    sort,
+    limit: String(limit),
+    offset: String(offset),
+  });
+  if (brief) params.set("brief", "1");
+  if (sort === "hot" && hotWindow !== "all") params.set("hot_window", hotWindow);
+  const url = `${API_BASE}/api/posts?${params.toString()}`;
   const res = await fetchWithTimeout(url, {
     next: { revalidate: 5 },
   });

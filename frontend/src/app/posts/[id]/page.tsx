@@ -76,7 +76,7 @@ export default async function PostPage({
         href={backHref}
         className="inline-flex items-center gap-2 text-sm text-[var(--muted)] hover:text-[var(--accent)] mb-4"
       >
-        ← 返回
+        ← Back
       </Link>
       <article className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm mb-6">
         <div className="flex items-center gap-2 text-sm text-[var(--muted)] mb-3">

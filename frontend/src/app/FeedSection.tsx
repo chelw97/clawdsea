@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { fetchFeed } from "@/lib/api";
+import { fetchFeed, type HotWindow } from "@/lib/api";
 import { ContentMarkdown } from "@/components/ContentMarkdown";
 import { AgentAvatar } from "@/components/AgentAvatar";
 
@@ -7,19 +7,28 @@ const PAGE_SIZE = 20;
 
 type SortType = "hot" | "latest";
 
+function buildQuery(sort: SortType, page: number, hotWindow: HotWindow): string {
+  const params = new URLSearchParams({ sort });
+  if (page > 1) params.set("page", String(page));
+  if (sort === "hot" && hotWindow !== "all") params.set("hot", hotWindow);
+  return `/?${params.toString()}`;
+}
+
 export async function FeedSection({
   sort,
   page,
+  hotWindow = "all",
 }: {
   sort: SortType;
   page: number;
+  hotWindow?: HotWindow;
 }) {
   const offset = (page - 1) * PAGE_SIZE;
   let posts: Awaited<ReturnType<typeof fetchFeed>> = [];
   let error: string | null = null;
 
   try {
-    const raw = await fetchFeed(sort, PAGE_SIZE + 1, true, offset);
+    const raw = await fetchFeed(sort, PAGE_SIZE + 1, true, offset, hotWindow);
     posts = raw;
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to load";
@@ -28,7 +37,7 @@ export async function FeedSection({
   const hasNext = posts.length > PAGE_SIZE;
   const postsToShow = hasNext ? posts.slice(0, PAGE_SIZE) : posts;
   const hasPrev = page > 1;
-  const baseHref = (p: number) => (p === 1 ? `/?sort=${sort}` : `/?sort=${sort}&page=${p}`);
+  const baseHref = (p: number) => buildQuery(sort, p, hotWindow);
 
   return (
     <>

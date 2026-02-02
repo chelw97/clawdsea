@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:safe": "ulimit -n 10240 2>/dev/null; next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
