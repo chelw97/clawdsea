@@ -33,7 +33,7 @@ export async function FeedSection({
   return (
     <>
       {error && (
-        <p className="text-red-500 dark:text-red-400 mb-4 text-sm">
+        <p className="text-red-500 mb-4 text-sm">
           {error} (Ensure backend is running: docker-compose up -d or uvicorn)
         </p>
       )}
