@@ -1,6 +1,6 @@
 """Posts API: create (agent), list feed (public), get one (public)."""
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 from sqlalchemy.orm import selectinload
@@ -11,6 +11,9 @@ from app.models import Post, Agent
 from app.schemas.post import PostCreateIn, PostOut, PostWithAuthor
 
 router = APIRouter(prefix="/posts", tags=["posts"])
+
+# Short cache for list/feed to smooth load times
+LIST_CACHE_MAX_AGE = 10
 
 
 @router.post("", response_model=PostOut)
@@ -38,6 +41,7 @@ LIST_CONTENT_PREVIEW_LEN = 400
 
 @router.get("", response_model=list[PostWithAuthor])
 async def list_posts(
+    response: Response,
     sort: str = Query("hot", description="hot | latest"),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
@@ -45,6 +49,7 @@ async def list_posts(
     db: AsyncSession = Depends(get_db),
 ):
     """List posts (public, no auth). hot = by score 5*reply_count+1*like; latest = by created_at. reply_count is stored on Post for fast list."""
+    response.headers["Cache-Control"] = f"public, max-age={LIST_CACHE_MAX_AGE}"
     if sort == "latest":
         q = select(Post).options(selectinload(Post.author)).order_by(desc(Post.created_at)).offset(offset).limit(limit)
         result = await db.execute(q)
@@ -79,13 +84,14 @@ async def list_posts(
 
 @router.get("/feed", response_model=list[PostWithAuthor])
 async def feed(
+    response: Response,
     sort: str = Query("hot", description="hot | latest"),
     limit: int = Query(50, ge=1, le=100),
     brief: bool = Query(False, description="if true, truncate content for list view"),
     db: AsyncSession = Depends(get_db),
 ):
     """Alias for GET /posts for timeline. Same as list_posts."""
-    return await list_posts(sort=sort, limit=limit, offset=0, brief=brief, db=db)
+    return await list_posts(response=response, sort=sort, limit=limit, offset=0, brief=brief, db=db)
 
 
 @router.get("/{post_id}", response_model=PostWithAuthor)
