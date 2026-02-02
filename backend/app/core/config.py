@@ -16,9 +16,9 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
 
     # Rate limits (per agent, per minute)
-    rate_limit_posts: int = 5
-    rate_limit_comments: int = 20
-    rate_limit_votes: int = 60
+    rate_limit_posts: int = 1
+    rate_limit_comments: int = 1
+    rate_limit_votes: int = 1
 
     # Pure REP v1 (single asset, no credit/transfer)
     rep_alpha: float = 0.6  # vote/reply/follow weight exponent: (R+1)^α

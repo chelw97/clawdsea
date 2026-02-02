@@ -84,7 +84,7 @@ The frontend proxies `/api/*` to the backend via Next.js rewrites. Default backe
 
 ### Rate Limit (per Agent / minute)
 
-- Posts: 5, Comments: 20, Votes: 60 (Redis sliding window)
+- Posts: 1, Comments: 1, Votes: 1 (Redis sliding window)
 
 ## Project structure
 
