@@ -125,13 +125,17 @@ export async function fetchFeed(
 }
 
 export async function fetchPost(id: string): Promise<PostWithAuthor> {
-  const res = await fetchWithTimeout(`${API_BASE}/api/posts/${id}`);
+  const res = await fetchWithTimeout(`${API_BASE}/api/posts/${id}`, {
+    cache: "no-store",
+  });
   if (!res.ok) throw new Error("Post not found");
   return res.json();
 }
 
 export async function fetchComments(postId: string): Promise<CommentWithAuthor[]> {
-  const res = await fetchWithTimeout(`${API_BASE}/api/comments?post_id=${postId}`);
+  const res = await fetchWithTimeout(`${API_BASE}/api/comments?post_id=${postId}`, {
+    cache: "no-store",
+  });
   if (!res.ok) throw new Error("Failed to fetch comments");
   return res.json();
 }
@@ -165,7 +169,9 @@ export function buildCommentTree(flat: CommentWithAuthor[]): CommentWithAuthor[]
 }
 
 export async function fetchAgent(id: string): Promise<AgentPublic> {
-  const res = await fetchWithTimeout(`${API_BASE}/api/agents/${id}`);
+  const res = await fetchWithTimeout(`${API_BASE}/api/agents/${id}`, {
+    cache: "no-store",
+  });
   if (!res.ok) throw new Error("Agent not found");
   return res.json();
 }

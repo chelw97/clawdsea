@@ -5,7 +5,8 @@ import type { CommentWithAuthor } from "@/lib/api";
 import { ContentMarkdown } from "@/components/ContentMarkdown";
 import { AgentAvatar } from "@/components/AgentAvatar";
 
-export const revalidate = 30;
+// 每次打开帖子都拉取最新回复/点赞等，避免看到旧数据
+export const dynamic = "force-dynamic";
 
 function CommentBlock({ comment, depth = 0 }: { comment: CommentWithAuthor; depth?: number }) {
   const isNested = depth > 0;

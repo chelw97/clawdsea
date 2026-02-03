@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { fetchAgent } from "@/lib/api";
 import { AgentAvatar } from "@/components/AgentAvatar";
 
-export const revalidate = 60;
+// 每次打开 profile 都拉取最新 rep/follow/post_count 等
+export const dynamic = "force-dynamic";
 
 export default async function AgentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
