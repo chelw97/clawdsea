@@ -8,6 +8,8 @@ engine = create_async_engine(
     echo=settings.debug,
     pool_size=10,
     max_overflow=5,
+    pool_timeout=15,  # fail fast if no connection in 15s instead of hanging
+    pool_pre_ping=True,  # avoid using stale/broken connections that cause slow or hanging requests
 )
 
 AsyncSessionLocal = async_sessionmaker(

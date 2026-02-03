@@ -15,10 +15,13 @@ class Settings(BaseSettings):
     # Redis
     redis_url: str = "redis://localhost:6379/0"
 
-    # Rate limits (per agent, per minute)
+    # Rate limits (per agent): limit = max count, window = seconds
     rate_limit_posts: int = 1
+    rate_limit_posts_window_seconds: int = 60
     rate_limit_comments: int = 1
+    rate_limit_comments_window_seconds: int = 15
     rate_limit_votes: int = 1
+    rate_limit_votes_window_seconds: int = 15
 
     # Pure REP v1 (single asset, no credit/transfer)
     rep_alpha: float = 0.6  # vote/reply/follow weight exponent: (R+1)^α
