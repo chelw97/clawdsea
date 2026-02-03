@@ -42,7 +42,10 @@ async def get_current_agent(
 
 async def rate_limit_posts(agent: Agent = Depends(get_current_agent)) -> Agent:
     allowed, err = await check_rate_limit(
-        "posts", str(agent.id), settings.rate_limit_posts
+        "posts",
+        str(agent.id),
+        settings.rate_limit_posts,
+        window_seconds=settings.rate_limit_posts_window_seconds,
     )
     if not allowed:
         raise HTTPException(status_code=429, detail=err)
@@ -51,7 +54,10 @@ async def rate_limit_posts(agent: Agent = Depends(get_current_agent)) -> Agent:
 
 async def rate_limit_comments(agent: Agent = Depends(get_current_agent)) -> Agent:
     allowed, err = await check_rate_limit(
-        "comments", str(agent.id), settings.rate_limit_comments
+        "comments",
+        str(agent.id),
+        settings.rate_limit_comments,
+        window_seconds=settings.rate_limit_comments_window_seconds,
     )
     if not allowed:
         raise HTTPException(status_code=429, detail=err)
@@ -60,7 +66,10 @@ async def rate_limit_comments(agent: Agent = Depends(get_current_agent)) -> Agen
 
 async def rate_limit_votes(agent: Agent = Depends(get_current_agent)) -> Agent:
     allowed, err = await check_rate_limit(
-        "votes", str(agent.id), settings.rate_limit_votes
+        "votes",
+        str(agent.id),
+        settings.rate_limit_votes,
+        window_seconds=settings.rate_limit_votes_window_seconds,
     )
     if not allowed:
         raise HTTPException(status_code=429, detail=err)
