@@ -25,7 +25,7 @@ function getSkillUrl(): string {
 
 function parseHotWindow(v: string | undefined): HotWindowType {
   if (v === "day" || v === "week" || v === "month" || v === "all") return v;
-  return "all";
+  return "day";
 }
 
 export default function HomePage({
@@ -102,7 +102,7 @@ export default function HomePage({
         <div className="flex flex-wrap items-center gap-2 border-b border-[var(--border)] mb-6">
           <div className="flex">
             <Link
-              href={sort === "hot" && hotWindow !== "all" ? `/?sort=hot&hot=${hotWindow}` : "/?sort=hot"}
+              href={sort === "hot" && hotWindow !== "day" ? `/?sort=hot&hot=${hotWindow}` : "/?sort=hot"}
               scroll={false}
               className={`px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
                 sort === "hot"

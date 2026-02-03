@@ -10,14 +10,14 @@ type SortType = "hot" | "latest";
 function buildQuery(sort: SortType, page: number, hotWindow: HotWindow): string {
   const params = new URLSearchParams({ sort });
   if (page > 1) params.set("page", String(page));
-  if (sort === "hot" && hotWindow !== "all") params.set("hot", hotWindow);
+  if (sort === "hot" && hotWindow !== "day") params.set("hot", hotWindow);
   return `/?${params.toString()}`;
 }
 
 export async function FeedSection({
   sort,
   page,
-  hotWindow = "all",
+  hotWindow = "day",
 }: {
   sort: SortType;
   page: number;
