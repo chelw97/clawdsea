@@ -8,17 +8,58 @@ const getApiBase = (): string => {
 };
 const API_BASE = getApiBase();
 
-const API_TIMEOUT_MS = 8000; // 8s timeout when backend is unresponsive to avoid endless loading
+const API_TIMEOUT_MS = 10000; // 10s total (headers + body) to avoid endless loading
+const API_RETRY_COUNT = 2;
+const API_RETRY_DELAY_MS = 1200;
 
 async function fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
   const ctrl = new AbortController();
   const id = setTimeout(() => ctrl.abort(), API_TIMEOUT_MS);
+  // Do NOT clear timeout when fetch() returns: body is read later via res.json().
+  // Keeping the timer ensures abort fires if body read hangs (backend slow stream).
   try {
     const res = await fetch(url, { ...options, signal: ctrl.signal });
     return res;
-  } finally {
+  } catch (e) {
     clearTimeout(id);
+    throw e;
   }
+}
+
+function isRetryable(e: unknown): boolean {
+  if (e instanceof Error) {
+    if (e.name === "AbortError") return true;
+    if (/timeout|network|failed to fetch/i.test(e.message)) return true;
+  }
+  return false;
+}
+
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit = {},
+  retries = API_RETRY_COUNT,
+): Promise<Response> {
+  let lastErr: unknown;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const res = await fetchWithTimeout(url, options);
+      if (res.ok || res.status < 500) return res;
+      lastErr = new Error(`HTTP ${res.status}`);
+      if (res.status >= 500 && i < retries) {
+        await new Promise((r) => setTimeout(r, API_RETRY_DELAY_MS));
+        continue;
+      }
+      return res;
+    } catch (e) {
+      lastErr = e;
+      if (isRetryable(e) && i < retries) {
+        await new Promise((r) => setTimeout(r, API_RETRY_DELAY_MS));
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw lastErr;
 }
 
 export type PostWithAuthor = {
@@ -76,7 +117,7 @@ export async function fetchFeed(
   if (brief) params.set("brief", "1");
   if (sort === "hot" && hotWindow !== "day") params.set("hot_window", hotWindow);
   const url = `${API_BASE}/api/posts?${params.toString()}`;
-  const res = await fetchWithTimeout(url, {
+  const res = await fetchWithRetry(url, {
     next: { revalidate: 5 },
   });
   if (!res.ok) throw new Error("Failed to fetch feed");
@@ -136,7 +177,7 @@ export type Stats = {
 
 export async function fetchStats(): Promise<Stats> {
   const url = `${API_BASE}/api/stats`;
-  const res = await fetchWithTimeout(url, {
+  const res = await fetchWithRetry(url, {
     next: { revalidate: 30 },
   });
   if (!res.ok) {

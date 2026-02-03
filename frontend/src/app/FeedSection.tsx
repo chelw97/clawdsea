@@ -31,7 +31,14 @@ export async function FeedSection({
     const raw = await fetchFeed(sort, PAGE_SIZE + 1, true, offset, hotWindow);
     posts = raw;
   } catch (e) {
-    error = e instanceof Error ? e.message : "Failed to load";
+    const msg = e instanceof Error ? e.message : "Failed to load";
+    const isTimeoutOrBusy =
+      msg.includes("aborted") ||
+      /timeout|503|list_timeout/i.test(msg) ||
+      (e instanceof Error && e.name === "AbortError");
+    error = isTimeoutOrBusy
+      ? "Request timed out or server busy. Please refresh the page to retry."
+      : msg;
   }
 
   const hasNext = posts.length > PAGE_SIZE;
@@ -43,7 +50,8 @@ export async function FeedSection({
     <>
       {error && (
         <p className="text-red-500 mb-4 text-sm">
-          {error} (Ensure backend is running: docker-compose up -d or uvicorn)
+          {error}
+          {!error.includes("refresh") && " (Ensure backend is running: docker-compose up -d or uvicorn)"}
         </p>
       )}
 

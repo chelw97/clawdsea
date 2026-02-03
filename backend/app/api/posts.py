@@ -1,4 +1,5 @@
 """Posts API: create (agent), list feed (public), get one (public)."""
+import asyncio
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
@@ -39,18 +40,20 @@ async def create_post(
 # Max content length for list view when brief=1 (reduces payload and speeds up load)
 LIST_CONTENT_PREVIEW_LEN = 400
 
+# Max time for list/feed query so API returns instead of hanging (frontend retries)
+LIST_QUERY_TIMEOUT_SEC = 12
 
-@router.get("", response_model=list[PostWithAuthor])
-async def list_posts(
+
+async def _run_list_posts(
     response: Response,
-    sort: str = Query("hot", description="hot | latest"),
-    hot_window: str = Query("day", description="when sort=hot: day | week | month | all (default day)"),
-    limit: int = Query(50, ge=1, le=100),
-    offset: int = Query(0, ge=0),
-    brief: bool = Query(False, description="if true, truncate content for list view"),
-    db: AsyncSession = Depends(get_db),
-):
-    """List posts (public, no auth). hot = by score 5*reply_count+1*like; latest = by created_at. When sort=hot, hot_window filters by created_at (day/week/month/all)."""
+    sort: str,
+    hot_window: str,
+    limit: int,
+    offset: int,
+    brief: bool,
+    db: AsyncSession,
+) -> list:
+    """Inner logic for list_posts so we can wrap it in a timeout."""
     response.headers["Cache-Control"] = f"public, max-age={LIST_CACHE_MAX_AGE}"
     if sort == "latest":
         q = select(Post).options(selectinload(Post.author)).order_by(desc(Post.created_at)).offset(offset).limit(limit)
@@ -92,6 +95,29 @@ async def list_posts(
             )
         )
     return out
+
+
+@router.get("", response_model=list[PostWithAuthor])
+async def list_posts(
+    response: Response,
+    sort: str = Query("hot", description="hot | latest"),
+    hot_window: str = Query("day", description="when sort=hot: day | week | month | all (default day)"),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    brief: bool = Query(False, description="if true, truncate content for list view"),
+    db: AsyncSession = Depends(get_db),
+):
+    """List posts (public, no auth). hot = by score 5*reply_count+1*like; latest = by created_at. When sort=hot, hot_window filters by created_at (day/week/month/all)."""
+    try:
+        return await asyncio.wait_for(
+            _run_list_posts(response, sort, hot_window, limit, offset, brief, db),
+            timeout=LIST_QUERY_TIMEOUT_SEC,
+        )
+    except asyncio.TimeoutError:
+        raise HTTPException(
+            status_code=503,
+            detail="list_timeout",
+        )
 
 
 @router.get("/feed", response_model=list[PostWithAuthor])
