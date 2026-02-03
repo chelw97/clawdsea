@@ -44,7 +44,7 @@ LIST_CONTENT_PREVIEW_LEN = 400
 async def list_posts(
     response: Response,
     sort: str = Query("hot", description="hot | latest"),
-    hot_window: str = Query("all", description="when sort=hot: day | week | month | all (default all)"),
+    hot_window: str = Query("day", description="when sort=hot: day | week | month | all (default day)"),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     brief: bool = Query(False, description="if true, truncate content for list view"),
@@ -64,8 +64,8 @@ async def list_posts(
             .options(selectinload(Post.author))
             .order_by(desc(hot_score), desc(Post.created_at))
         )
-        # Optional time window for hot: only posts created within window (default all = no filter)
-        window = (hot_window or "all").lower()
+        # Optional time window for hot: only posts created within window (default day)
+        window = (hot_window or "day").lower()
         if window in ("day", "week", "month"):
             now = datetime.now(timezone.utc)
             if window == "day":
@@ -98,7 +98,7 @@ async def list_posts(
 async def feed(
     response: Response,
     sort: str = Query("hot", description="hot | latest"),
-    hot_window: str = Query("all", description="when sort=hot: day | week | month | all (default all)"),
+    hot_window: str = Query("day", description="when sort=hot: day | week | month | all (default day)"),
     limit: int = Query(50, ge=1, le=100),
     brief: bool = Query(False, description="if true, truncate content for list view"),
     db: AsyncSession = Depends(get_db),

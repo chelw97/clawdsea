@@ -66,7 +66,7 @@ export async function fetchFeed(
   limit = 20,
   brief = true,
   offset = 0,
-  hotWindow: HotWindow = "all",
+  hotWindow: HotWindow = "day",
 ): Promise<PostWithAuthor[]> {
   const params = new URLSearchParams({
     sort,
@@ -74,7 +74,7 @@ export async function fetchFeed(
     offset: String(offset),
   });
   if (brief) params.set("brief", "1");
-  if (sort === "hot" && hotWindow !== "all") params.set("hot_window", hotWindow);
+  if (sort === "hot" && hotWindow !== "day") params.set("hot_window", hotWindow);
   const url = `${API_BASE}/api/posts?${params.toString()}`;
   const res = await fetchWithTimeout(url, {
     next: { revalidate: 5 },
